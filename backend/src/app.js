@@ -1,0 +1,503 @@
+/**
+ * Rapyd Integrations: Request Signature.
+ *
+ * This app implements the Rapyd's API request signature. The crypto-js library
+ * is required (https://www.npmjs.com/package/crypto-js). To install it, run:
+ * 
+ * npm install crypto-js
+ *
+ * @link   https://docs.rapyd.net/
+ * @file   This files defines the main node.js application.
+ * @author Isaac Benitez.
+ * @version 0.0.1
+ * 
+ * @requires express
+ * @requires https
+ * @requires crypto-js
+ */
+ const serverless = require('serverless-http');
+ const https = require('https');
+const express = require('express');
+var jwt = require('jsonwebtoken');
+var cors = require('cors');
+const makeRequest = require('./utilities').makeRequest;
+let bodyParser=require('body-parser');
+const bcrypt = require('bcrypt');
+var axios = require('axios');
+
+var app = express();
+app.use(bodyParser.json())
+app.set('json spaces', 4);
+const corsConfig = {
+    credentials: true,
+    origin: true,
+};
+app.use(cors());
+app.listen(3000);
+var salt = "";
+app.get('/FetchPaymentMethods/:countryname', async (req, res) => {
+
+    var countryname = req.params.countryname;
+    // console.log(countryname);
+    try {
+        const result = await makeRequest('GET', '/v1/payment_methods/country?country='+countryname);
+    
+        res.json(result);
+      } catch (error) {
+        res.json(error);
+      }
+
+})
+
+app.get('/payment', async (req, res) => {
+
+    try {
+        const body = {
+            amount: 230,
+            currency: 'EUR',
+            payment_method: {
+                type: 'it_psc_cash'
+            }
+        };
+        const result = await makeRequest('POST', '/v1/payments', body);
+        res.json(result);
+    } catch (error) {
+        res.json(error);
+    }
+
+})
+
+app.get('/countries', async (req, res) => {
+    
+    // console.log("fetching countries");
+    try {   
+        const result = await makeRequest('GET', '/v1/data/countries');
+        res.json(result);
+    } catch (error) {
+        res.json(error);
+    }
+
+})
+
+
+app.get('/requiredfields/:payment_id', async (req, res) => {
+    var payment_id = req.params.payment_id;
+    // console.log(payment_id);
+    try {
+        const result = await makeRequest('GET', '/v1/payment_methods/required_fields/'+payment_id);
+        // Message body absent/'+payment_id);
+        res.json(result);
+    } catch (error) {
+        res.json(error);
+    }
+});
+
+app.post('/checkout', async (req, res) => {
+    
+    let body = req.body;
+    // console.log(body);
+    try{
+
+        const result = await makeRequest('POST', '/v1/checkout', body);
+        res.json(result);
+    }
+    catch(error){
+        res.json(error);
+    }
+
+
+});
+
+app.get("/checkout/:checkoutid", async (req, res) => {
+    let checkoutid = req.params.checkoutid;
+    // console.log(checkoutid);
+    try {
+        const result = await makeRequest('GET', '/v1/checkout/'+checkoutid);
+       
+        // console.log(result);
+        res.send(result);
+    } catch (error) {
+        res.send(error);
+    }
+});
+
+app.post("/create/customer", async (req, res) => {
+    let body = req.body;
+    // console.log(body);
+    try {
+        const result = await makeRequest('POST', '/v1/customers', body);
+        
+        res.json(result);
+
+    } catch (error) {
+        res.json(error);
+    }
+   
+});
+
+app.get("/checkifexist/:customer_id", async (req, res) => {
+
+    let customer_id = req.params.customer_id;
+
+    await axios.get('https://rapidapiv2.herokuapp.com/checkif/address/'+customer_id).then(function(response){
+    //   console.log(response.data.data);
+
+      if(response.data.data.length>=1){
+        const resp = {
+            status: 200
+        }
+        res.status(200).send(resp);
+      }
+
+      else{
+
+        const resp = {
+            status:404
+        }
+        res.status(200).send(resp);
+      }
+   
+
+      }).catch(function(error){
+            const resp = {
+                status: 405,
+            }
+            res.status(200).send(resp);
+    });
+
+});
+
+app.get("/sendotp/:countrycode/number/:phonenumber/customerid/:customerid", async(req, res) => {
+    
+        let countrycode = req.params.countrycode;
+        let phonenumber = req.params.phonenumber;
+        let customerid = req.params.customerid;
+        
+        // console.log(countrycode);
+        // console.log(phonenumber);
+        salt = await bcrypt.genSalt(6);
+        // const otp = Math.floor(Math.random() * 1000000).toString();
+        const otp = "123456";
+        // console.log(otp);
+        const encryptedotp = await bcrypt.hash(otp, salt);
+        const token = jwt.sign({
+            "otp": encryptedotp,
+            "countrycode": countrycode,
+            "phonenumber": phonenumber,
+            "customerid": customerid
+
+
+        }, 'secret', { expiresIn: '120s' });
+        // console.log(token);
+        const response = {
+            "token": token
+        }
+        res.json(response);
+
+
+
+});
+
+app.post("/verifyotp", async (req, res) => {
+    let body = req.body;
+    var accesskey = req.headers['x-access-key'];
+    // console.log(accesskey);
+    if(accesskey==="" ||accesskey===undefined || accesskey===null){
+
+        const response = {
+
+            "status": "false",
+            "message": "Please provide One Time Password"
+
+        }
+        res.status(404).json(response);
+    }
+    else{
+    // console.log(body);
+    let otp = body.otp;
+
+  
+    let token = accesskey;
+    try{
+    const decoded = jwt.verify(token, 'secret');
+    
+
+    
+    // const userotp = await bcrypt.hash(otp, salt);
+    const checkotp = await bcrypt.compare(otp, decoded.otp);
+    const getaddress = await axios.get(`https://rapidapiv2.herokuapp.com/checkif/address/${decoded.customerid}`);
+    
+    if(checkotp){
+        
+        const response = {
+
+            "status": "true",
+            "message": "OTP verified",
+            "address": getaddress.data.data
+
+        }
+        
+        res.status(200).json(response);
+    }
+    else{
+        const response = {
+
+            "status": "false",
+            "message": "OTP incorrect"
+
+        }
+        res.status(404).json(response);
+    }
+    
+    }
+    catch(error){
+
+          const response = {
+
+            "status": "false",
+            "message": "Something went wrong."
+
+        }
+        res.status(404).json(response);
+    }
+}
+});
+
+
+app.get("/addresses/:addressid", async (req, res) => {
+const addressid = req.params.addressid;
+try{
+const response = await makeRequest('GET', '/v1/addresses/'+addressid);
+// const resp  = {
+//     "status": "true",
+//     "address_id": response.data.data,
+// }
+res.status(200).json(response.body.data);
+}
+catch(error){
+    const resp  = {
+        "status": "false"
+    }
+    res.status(200).send(error);
+}
+
+});
+
+
+app.post("/save/address/:customerid", async (req, res) => {
+    let body = req.body;
+    let customerid = req.params.customerid;
+    
+    try{
+    const response = await makeRequest('POST', '/v1/addresses', body);
+    // console.log(response.body.data);
+    const resp  = {
+        "status": "true",
+        "address_id": response.body.data.id,
+    }
+    const savetodatabase = await axios.post('https://rapidapiv2.herokuapp.com/save/address', {
+    "customer_id": customerid,
+    "address_id": response.body.data.id        
+    });
+    
+    res.status(200).json(resp);
+    }
+    catch(error){
+        const resp  = {
+            "status": "false"
+        }
+        res.status(200).send(error);
+    }
+
+
+});
+
+
+app.get("/list/coupons", async (req, res) => {
+
+    try{
+    const response = await makeRequest('GET', '/v1/coupons');
+    // console.log(response.body.data);
+    const resp  = {
+        "status": "true",
+        "coupons": response.body.data,
+    }
+    res.status(200).json(resp);
+    }
+    catch(error){
+        const resp  = {
+            "status": "false",
+            "coupons": 0 
+        }
+        res.status(200).send(error);
+    }
+
+});
+
+
+app.get("/customer/:customerid/paymentmethods", async (req, res) => {
+    let customerid = req.params.customerid;
+    try{
+    const response = await makeRequest('GET', '/v1/customers/'+customerid+'/payment_methods');
+    // console.log(response.body.data);
+    const resp  = {
+        "status": "true",
+        "payment_methods": response.body.data
+    }
+    res.status(200).json(resp);
+    }
+    catch(error){
+        const resp  = {
+            "status": "false",
+            "payment_methods": 0 
+        }
+        res.status(200).send(error);
+    }
+
+});
+
+app.post("/createtoken", async (req, res) => {
+    let body = req.body;
+    try{
+        const token = jwt.sign({
+            
+            "customer_name_global": body.customer_name_global,
+            "customer_email_global": body.customer_email_global,
+            
+            "customer_phone_global": body.customer_phone_global,
+
+            "customer_country_code_global" : body.customer_country_code_global,
+
+
+
+
+
+            "customer_billing_name_global": body.customer_billing_name_global,
+
+             "customer_billing_phone_global" : body.customer_billing_phone_global,
+            
+             "customer_billing_countrycode_global": body.customer_billing_countrycode_global,
+
+            "customer_addressline1_global" : body.customer_billing_addressline1_global,
+
+            
+
+
+            "customer_billing_addressline2_global" : body.customer_billing_addressline2_global,
+
+            "customer_billing_country_global" : body.customer_billing_country_global,
+
+            "customer_billing_state_global" : body.customer_billing_state_global,
+
+            "customer_billing_city_global" : body.customer_billing_city_global,
+
+
+
+            "customer_billing_zip_global"  : body.customer_billing_zip_global,
+
+            "customer_id_global" : body.customer_id_global,
+
+
+            "customer_address_global_id" : body.customer_address_global_id
+        
+
+
+
+
+        }, 'secret', { expiresIn: '30d' });
+
+        const response = {
+            "status": true,
+            "token": token
+        }
+        res.status(200).json(response);
+
+
+   
+    
+
+}
+    catch(error){
+        const resp  = {
+            "status": "false",
+            "token": 0 
+        }
+        res.status(200).send(error);
+    }
+
+});
+
+
+app.post("/validatetoken", async (req, res) => {
+
+let body = req.body;
+let token = body.token;
+
+    try{
+    const decoded = jwt.verify(token, 'secret');
+    const response = {
+        "status": true,
+        "customer_name_global": decoded.customer_name_global,
+        "customer_email_global": decoded.customer_email_global,
+
+        "customer_phone_global": decoded.customer_phone_global,
+
+        "customer_country_code_global" : decoded.customer_country_code_global,
+
+
+
+
+
+        "customer_billing_name_global": decoded.customer_billing_name_global,
+
+        "customer_billing_phone_global" : decoded.customer_billing_phone_global,
+
+        "customer_billing_countrycode_global": decoded.customer_billing_countrycode_global,
+
+        "customer_billing_addressline1_global" : decoded.customer_addressline1_global,
+
+        "customer_billing_addressline2_global" : decoded.customer_billing_addressline2_global,
+
+        "customer_billing_country_global" : decoded.customer_billing_country_global,
+
+        "customer_billing_state_global" : decoded.customer_billing_state_global,
+
+        "customer_billing_city_global" : decoded.customer_billing_city_global,
+
+        "customer_billing_zip_global"  : decoded.customer_billing_zip_global,
+
+        "customer_id_global" : decoded.customer_id_global,
+
+
+        "customer_address_global_id" : decoded.customer_address_global_id
+
+
+
+    }
+
+    res.status(200).json(response);
+
+
+
+
+
+    }
+    catch(error){
+        const resp  = {
+            "status": "false",
+            "token": 0 
+        }
+        res.status(404).json(resp);
+    }
+
+    
+
+
+
+
+});
+
+
+
+	
+module.exports.handler = serverless(app);
