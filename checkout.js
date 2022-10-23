@@ -78,7 +78,6 @@
         node.classList.add('error');
     }
 
-
     MockPay.prototype.open = async function () {
         var imported = document.createElement('script');
         imported.src = 'https://cdn.jsdelivr.net/npm/add-to-calendar-button@1.8';
@@ -1650,4 +1649,509 @@
 
             }
 
+
+            async function thirdframe(payment_methods_name, countrycode, card_store, eWallet_store, Cash_store, Bank_Transfer_store, Bank_Redirect_store, currency, amount) {
+                    
+                const thisform = document.getElementById('frame1');
+                thisform.style.display = 'none';
+                const thisform2 = document.getElementById('frame2');
+                thisform2.style.display = 'none';
+                const thisform3 = document.getElementById('frame3');
+                thisform3.style.display = 'block';
+                const thisform4 = document.getElementById('frame4');
+                thisform4.style.display = 'none';
+
+                while(thisform3.firstChild){
+                    thisform3.removeChild(thisform3.firstChild);
+                }
+            
+                var payment_methods_arr_load = [];
+                if(payment_methods_name=="Card"){
+                    payment_methods_arr_load = card_store;
+                }
+                if(payment_methods_name=="eWallet"){
+                    payment_methods_arr_load = eWallet_store;
+                }
+                if(payment_methods_name=="Cash"){
+                    payment_methods_arr_load = Cash_store;
+                }
+                if(payment_methods_name=="Bank Transfer"){
+                    payment_methods_arr_load = Bank_Transfer_store;
+                }
+                if(payment_methods_name=="Bank Redirect"){
+                    payment_methods_arr_load = Bank_Redirect_store;
+                }
+
+                const paymentmethods_cards_load = document.createElement("div");
+
+                paymentmethods_cards_load.className = 'payment-methods-cards-load';
+                
+                
+                if(payment_methods_arr_load.length!=0){
+                payment_methods_arr_load.forEach(element => {
+                    
+                    let name = element.type;
+
+                    const loaderspecific_methods = document.createElement("div");
+                    loaderspecific_methods.className = 'payment-icon';
+                 
+                    loaderspecific_methods.id = name;
+                    loaderspecific_methods.innerHTML = '<img src="'+element.image+'" alt="" class="payment-card-image-load">';
+                    loaderspecific_methods.onclick = (() => {
+                        
+                        let thisframe = function (){
+
+                            thirdframe(payment_methods_name, countrycode, card_store, eWallet_store, Cash_store, Bank_Transfer_store, Bank_Redirect_store, currency, amount);
+                        }
+                        forthframe(name, countrycode, currency, amount, thisframe);
+                    });
+                    paymentmethods_cards_load.appendChild(loaderspecific_methods);
+                               
+
+                    console.log(element);
+                });
+            }
+            else{
+
+                paymentmethods_cards_load.innerHTML = '<div class="payment-methods-cards-load-text">No payment methods available</div>';
+            }
+            
+                 const backbtn = document.createElement("div");
+                 backbtn.className = 'back-button';
+                 
+                 backbtn.innerHTML = '<i class="fa fa-arrow-left" aria-hidden="true"></i>Back';
+                 
+                 backbtn.style.backgroundColor = this.themeColor;
+                 backbtn.onclick = (() => {
+                     const thisform = document.getElementById('frame1');
+                     thisform.style.display = 'none';
+                     const thisform2 = document.getElementById('frame2');
+                     thisform2.style.display = 'block';
+                     const thisform3 = document.getElementById('frame3');
+                     thisform3.style.display = 'none';
+
+                 });
+                 thirdcontainer.appendChild(backbtn);
+                thirdcontainer.appendChild(paymentmethods_cards_load);
+                console.log(payment_methods_arr_load);
+
+
+            }
+
+            async function forthframe(paymentid, countrycode, currency, amount, backframe) {
+
+                console.log(complete_payment_urlx);
+
+                const thisform = document.getElementById('frame1');
+                thisform.style.display = 'none';
+                const thisform2 = document.getElementById('frame2');
+                thisform2.style.display = 'none';
+                const thisform3 = document.getElementById('frame3');
+                thisform3.style.display = 'none';
+                const thisform4 = document.getElementById('frame4');
+                thisform4.style.display = 'block';
+                while(thisform4.firstChild){
+                    thisform4.removeChild(thisform4.firstChild);
+                }
+                    const backbtn = document.createElement("div");
+                    backbtn.className = 'back-button';
+                    
+                    backbtn.innerHTML = '<i class="fa fa-arrow-left" aria-hidden="true"></i>Back';
+                    
+                    backbtn.style.backgroundColor = this.themeColor;
+                    backbtn.onclick = (() => {
+                        backframe();
+                    });
+
+                    
+
+                    thisform4.appendChild(backbtn);
+                   
+                   
+                   
+
+                   
+                    let currentepochtime =  Math.floor( new Date().getTime() / 1000 )+5000;
+                    console.log(currentepochtime);
+                    let sendpostrequest = await fetch('https://sykmj6ydmf.execute-api.us-east-1.amazonaws.com/dev/checkout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+
+                       
+                        body: JSON.stringify({
+                            
+                                "amount": amount,
+                                "complete_payment_url": complete_payment_urlx,
+                                "country": countrycode,
+                                "currency": currency_user_definedx,
+                                "requested_currency": currency,
+                                "customer": customer_id_global,
+                                "error_payment_url": "http://example.com/error",
+                                "complete_checkout_url": complete_payment_urlx,
+                                "merchant_reference_id": "950ae8c6-78",
+                                "language": "en",
+                                "metadata": {
+                                    "merchant_defined": true,
+                                    "address": {
+                                        "billing_name": customer_billing_name_global,
+                                        "billing_address_line_1": customer_billing_addressline1_global,
+                                        "billing_address_line_2": customer_billing_addressline2_global,
+                                        "billing_city": customer_billing_city_global,
+                                        "billing_state": customer_billing_state_global,
+                                        "billing_country": customer_billing_country_global,
+                                        "billing_postal_code": customer_billing_zip_global,
+                                        "billing_phone": customer_billing_phone_global,
+                                        
+
+
+                                    },
+                                    "orders": customerx
+
+                                },
+                               
+                                "payment_method_types_include": [
+                                    paymentid
+                                ],
+                                
+                                "payment_method_types_exclude": []
+                            
+                        })
+                    });
+                    const json_start_checkout = await sendpostrequest.json();
+                    setCookie('checkout_id', json_start_checkout.body.data.id, 1 );
+                    console.log(json_start_checkout.body);
+                    let checkout = new RapydCheckoutToolkit({
+                        pay_button_text: "Click to pay",
+                              // Text that appears on the 'Pay' button. 
+                              // String. Maximum length is 16 characters.
+                              // Default is "Place Your Order". Optional. 
+                        pay_button_color: "blue",
+                              // Color of the 'Pay' button. String.
+                              // Standard CSS color name or hexadecimal code such as #323fff.
+                              // Default is the color that is returned in the 'merchant_color'
+                              // field of the response to 'Create Checkout Page'. Optional.
+                        id: json_start_checkout.body.data.id,
+                              // ID of the 'Create Checkout Page' response. String. Required.
+                        // close_on_complete: true,
+                              // Causes the embedded Rapyd Checkout Toolkit window to close
+                              // when the payment is complete. Boolean. Default is 'true'. Optional.  
+                              style: {
+                                submit: {
+                                    base: {
+                                        color: "white"
+                                    }
+                                }
+                            },     
+                        // page_type: "collection"
+                             // Default is "collection". Optional.
+                    });
+                    checkout.displayCheckout();
+                    
+
+                    document.getElementById('mockpay_root').remove();
+
+                    // window.open(json_start_checkout.body.data.redirect_url, "popup", "width=500,height=500");
+                   
+                    loadingOverlay.classList.remove('hide');
+                    // const checking = await pollTransactionStatus(json_start_checkout.body.data.id);
+                    // console.log(checking);
+                    // forthcontainer.appendChild(checkout_iframe);
+                    loadingOverlay.classList.add('hide');
+
+            };
+
+
+
+
+
+            const gapDiv = document.createElement("div");
+            gapDiv.className = "flex-1";
+
+
+      
+         
+            header_area.appendChild(closeButton);
+            paymentCard.appendChild(header_area_container);
+            
+            paymentCard.appendChild(infoDiv);
+            firstcontainer.appendChild(gapDiv);
+            firstcontainer.appendChild(companyname);
+            firstcontainer.appendChild(proceedbtn);
+            paymentCard.appendChild(firstcontainer);
+
+          
+            const secondcontainer = document.createElement('div');
+            
+            secondcontainer.style.display='contents';
+            secondcontainer.setAttribute('id','frame2');
+           
+          
+            secondcontainer.style.display = 'none';
+           
+            
+            paymentCard.appendChild(secondcontainer);
+
+            const thirdcontainer = document.createElement('div');
+            thirdcontainer.innerHTML = 'Preferred Payment Method';
+            
+
+            thirdcontainer.style.display='none';
+            thirdcontainer.setAttribute('id','frame3');
+     
+            paymentCard.appendChild(thirdcontainer);
+
+            const forthcontainer = document.createElement('div');
+            forthcontainer.style.display='none';
+            forthcontainer.setAttribute('id','frame4');
+            paymentCard.appendChild(forthcontainer);
+
+          
+
+
+            
+            // const checkoutDiv = document.createElement("div");
+            // checkoutDiv.id = "rapyd-checkout";
+            // secondcontainer.appendChild(checkoutDiv);
+            // checkout.displayCheckout();
+
+            // paymentCard.appendChild(mobilenumbersection);
+          
+            // paymentCard.appendChild(cardNumberInput);
+            // paymentCard.appendChild(expiryCvvContainer);
+            // paymentCard.appendChild(nameInput);
+       
+         
+            
+
+          
+
+            paymentCardWrapper.appendChild(paymentCard);
+            paymentCardWrapper.appendChild(loadingOverlay);
+            
+            overlay.appendChild(paymentCardWrapper);
+            body.appendChild(overlay);
+          
+            const val = await validatetoken(this.amount);
+            if(val===true){
+                console.log(val);
+                overview(this.amount);
+            }
+            
+
+        }
+    }
+
+    async function create_and_store_token(){
+
+        let fetchtoken = await fetch('https://sykmj6ydmf.execute-api.us-east-1.amazonaws.com/dev/createtoken', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                
+                "customer_name_global": customer_name_global,
+                "customer_email_global": customer_email_global,
+                "customer_phone_global": customer_phone_global,
+                "customer_country_code_global" : customer_country_code_global,
+            
+
+                "customer_billing_name_global": customer_billing_name_global,
+                "customer_billing_phone_global": customer_billing_phone_global,
+                "customer_billing_countrycode_global": customer_billing_countrycode_global,
+                "customer_billing_addressline1_global": customer_billing_addressline1_global,
+               
+                "customer_billing_addressline2_global": customer_billing_addressline2_global,
+                
+                "customer_country_global": customer_billing_country_global,
+                "customer_billing_city_global": customer_billing_city_global,
+                "customer_billing_state_global": customer_billing_state_global,
+
+
+                "customer_billing_zip_global": customer_billing_zip_global,
+                "customer_id_global": customer_id_global,
+                "customer_address_global_id": customer_address_global_id        
+
+                
+            })
+
+
+
         });
+        fetchtoken = await fetchtoken.json();
+        console.log(fetchtoken);
+        let savetoken = await fetch('https://rapydtoken.herokuapp.com/save/session', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                "token": fetchtoken.token,
+            })
+        });
+        savetoken = await savetoken.json();
+        console.log(savetoken);
+        if(savetoken.status == 200){
+            console.log('token saved');
+            setCookie('rapyd-token-loggedin', savetoken.id, 30);
+        }
+      else{
+
+        console.log('token not saved');
+      }
+
+
+
+    }
+
+    async function validatetoken(){
+
+        try{
+        let mytoken = await fetch('https://rapydtoken.herokuapp.com/checksession/'+getCookie('rapyd-token-loggedin'));
+        mytoken = await mytoken.json();
+
+        let validatemytoken = await fetch('https://sykmj6ydmf.execute-api.us-east-1.amazonaws.com/dev/validatetoken', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "token": mytoken.token,
+                    })
+        });
+        validatemytoken = await validatemytoken.json();
+        console.log(validatemytoken);
+
+        if(validatemytoken.status == true){
+            customer_name_global =  validatemytoken.customer_name_global;
+            window['customer_email_global'] = validatemytoken.customer_email_global;
+            window['customer_phone_global']= validatemytoken.customer_phone_global;
+            window['customer_country_code_global']= validatemytoken.customer_country_code_global;
+        
+    
+            window['customer_billing_name_global']= validatemytoken.customer_billing_name_global;
+            window['customer_billing_phone_global']= validatemytoken.customer_billing_phone_global;
+            window['customer_billing_countrycode_global']= validatemytoken.customer_billing_countrycode_global;
+            window['customer_billing_addressline1_global']= validatemytoken.customer_billing_addressline1_global;
+           
+            window['customer_billing_addressline2_global']=validatemytoken.customer_billing_addressline2_global;
+            
+            window['customer_country_global']=validatemytoken.customer_billing_country_global;
+            window['customer_billing_city_global']= validatemytoken.customer_billing_city_global;
+            window['customer_billing_state_global']=validatemytoken.customer_billing_state_global;
+    
+    
+            window['customer_billing_zip_global']=validatemytoken.customer_billing_zip_global;
+            window['customer_id_global']=validatemytoken.customer_id_global;
+            window['customer_address_global_id']=validatemytoken.customer_address_global_id; 
+            return true;
+        }
+         
+        return false;
+    }
+    catch(e){
+        console.log(e);
+        return false;
+    }
+
+    }
+
+    function request(url, method, data) {
+        return new Promise((resolve, reject) => {
+            const xmlHttpRequest = new XMLHttpRequest();
+            xmlHttpRequest.onreadystatechange = function () {
+                if (this.readyState === 4 && this.status === 200) {
+                    resolve(JSON.parse(this.responseText))
+                } else if ([400, 403, 500].includes(this.status) && this.readyState === 4) {
+                    reject(JSON.parse(this.responseText))
+                }
+            }
+            xmlHttpRequest.open(method, url);
+            xmlHttpRequest.setRequestHeader('Content-Type', 'application/json');
+            if (method === "POST") {
+                xmlHttpRequest.send(JSON.stringify(data));
+            } else {
+                xmlHttpRequest.send();
+            }
+        })
+    }
+
+    function pollTransactionStatus(checkoutid) {
+        return new Promise(resolve => {
+            const poll = setInterval(() => {
+                const xhr = new XMLHttpRequest();
+                xhr.onreadystatechange = function () {
+                    if (this.readyState === 4 && this.status === 200) {
+                        const body = JSON.parse(this.responseText);
+                        console.log(body.body.data.payment.captured);
+                        var status = body.body.data.payment.captured;
+                        if (status){
+                            console.log("I am here");
+                            clearInterval(poll);
+                            resolve(body.body.data.payment);
+                            
+                            
+                        }
+                    }
+                }
+                xhr.open("GET", `http://localhost:3000/checkout/${checkoutid}`);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.send();
+            }, 3000);
+        })
+    }
+
+    function setCookie(name,value,days) {
+        var expires = "";
+        if (days) {
+            var date = new Date();
+            date.setTime(date.getTime() + (days*24*60*60*1000));
+            expires = "; expires=" + date.toUTCString();
+        }
+        document.cookie = name + "=" + (value || "")  + expires + "; path=/";
+    }
+
+    function getCookie(name) {
+        var nameEQ = name + "=";
+        var ca = document.cookie.split(';');
+        for(var i=0;i < ca.length;i++) {
+            var c = ca[i];
+            while (c.charAt(0)==' ') c = c.substring(1,c.length);
+            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+        }
+        return null;
+    }
+
+    function eraseCookie(name) {   
+        document.cookie = name +'=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+    }
+
+
+    window.MockPay = MockPay;
+})()
+
+
+window.addEventListener('onCheckoutPaymentSuccess', function (event) {
+    console.log(event.detail);
+    if(event.detail.redirect_url!="" && event.detail.redirect_url!=null){
+        window.location.replace(event.detail.redirect_url);
+    }
+   else{
+
+    window.location.replace(event.detail.complete_payment_url);
+
+   }
+
+    
+   console.log(event.detail.redirect_url);
+});
+window.addEventListener('onCheckoutFailure', function (event) {
+    console.log(event.detail.error);
+   alert(event.detail);
+});
+window.addEventListener('onCheckoutPaymentFailure', (event)=> {
+    console.log(event.detail.error);
+   alert(event.detail);
+})
